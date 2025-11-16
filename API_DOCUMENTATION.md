@@ -486,6 +486,244 @@ Content-Type: application/json
 }
 ```
 
+#### CSV Import / Quick Order
+
+##### Download CSV Template
+
+```http
+GET /api/vendor/orders/csv-template
+Authorization: Bearer {token}
+```
+
+**Response:** CSV file download
+```csv
+SKU,Quantity,Notes
+PROD-001,10,Urgent
+PROD-002,25,
+PROD-003,5,Standard delivery
+```
+
+##### Upload CSV File
+
+```http
+POST /api/vendor/orders/import-csv
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+
+{
+  "file": <csv_file>
+}
+```
+
+**Response 200 OK:**
+```json
+{
+  "status": "success",
+  "data": {
+    "import_id": 123,
+    "total_rows": 45,
+    "valid_rows": 42,
+    "invalid_rows": 3,
+    "errors": [
+      {
+        "row": 5,
+        "sku": "PROD-999",
+        "error": "Product not found or not visible"
+      },
+      {
+        "row": 12,
+        "sku": "PROD-456",
+        "error": "Insufficient stock (requested: 100, available: 50)"
+      }
+    ],
+    "preview": [
+      {
+        "sku": "PROD-001",
+        "product_name": "Product A",
+        "quantity": 10,
+        "unit_price": 25.500,
+        "subtotal": 255.000
+      }
+    ],
+    "totals": {
+      "subtotal": 12450.250,
+      "tax": 2490.050,
+      "total": 14940.300,
+      "items_count": 42
+    }
+  }
+}
+```
+
+##### Confirm CSV Import & Create Order
+
+```http
+POST /api/vendor/orders/confirm-csv-import
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "import_id": 123
+}
+```
+
+**Response 201 Created:**
+```json
+{
+  "status": "success",
+  "data": {
+    "order_id": 789,
+    "order_number": "ORD-2025-00789",
+    "items_count": 42,
+    "total": 14940.300
+  }
+}
+```
+
+##### Quick Order (Manual Entry / Copy-Paste)
+
+```http
+POST /api/vendor/orders/quick-order
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "items": [
+    {"sku": "PROD-001", "quantity": 10, "notes": "Urgent"},
+    {"sku": "PROD-002", "quantity": 25},
+    {"sku": "PROD-003", "quantity": 5}
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "valid_items": [
+      {
+        "product_id": 1,
+        "sku": "PROD-001",
+        "product_name": "Product A",
+        "quantity": 10,
+        "unit_price": 25.500,
+        "subtotal": 255.000,
+        "notes": "Urgent"
+      }
+    ],
+    "errors": [],
+    "totals": {
+      "subtotal": 1275.500,
+      "tax": 255.100,
+      "total": 1530.600,
+      "items_count": 3
+    }
+  }
+}
+```
+
+##### Create Order from Quick Order
+
+```http
+POST /api/vendor/orders/create-from-quick-order
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "items": [
+    {"sku": "PROD-001", "quantity": 10},
+    {"sku": "PROD-002", "quantity": 25}
+  ]
+}
+```
+
+**Response 201 Created:**
+```json
+{
+  "status": "success",
+  "data": {
+    "order_id": 790,
+    "order_number": "ORD-2025-00790",
+    "items_count": 2,
+    "total": 1530.600
+  }
+}
+```
+
+#### Reorder (Duplicate Order)
+
+```http
+POST /api/vendor/orders/{order_id}/reorder
+Authorization: Bearer {token}
+```
+
+**Response 201 Created:**
+```json
+{
+  "status": "success",
+  "message": "Commande dupliquée avec succès",
+  "data": {
+    "order_id": 791,
+    "order_number": "ORD-2025-00791",
+    "items_count": 5,
+    "total": 5430.750
+  }
+}
+```
+
+**Error if items unavailable (422):**
+```json
+{
+  "status": "warning",
+  "message": "Certains articles ne sont plus disponibles",
+  "errors": [
+    "Product PROD-001 out of stock",
+    "Minimum quantity for PROD-002 is 10"
+  ],
+  "valid_items": [...]
+}
+```
+
+#### Download Invoice PDF
+
+```http
+GET /api/vendor/orders/{order_id}/invoice
+Authorization: Bearer {token}
+```
+
+**Response:** PDF file download
+- Content-Type: application/pdf
+- Content-Disposition: attachment; filename="invoice-ORD-2025-00789.pdf"
+
+#### Export Orders (CSV/Excel)
+
+```http
+GET /api/vendor/orders/export
+Authorization: Bearer {token}
+
+Query Parameters:
+  - format          (optional) csv|xlsx (default: xlsx)
+  - status          (optional) pending|confirmed|processing|shipped|delivered|cancelled
+  - start_date      (optional) YYYY-MM-DD
+  - end_date        (optional) YYYY-MM-DD
+```
+
+**Example:**
+```http
+GET /api/vendor/orders/export?format=xlsx&status=delivered&start_date=2025-01-01&end_date=2025-01-31
+```
+
+**Response:** Excel/CSV file download
+- Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet (for xlsx)
+- Content-Type: text/csv (for csv)
+- Content-Disposition: attachment; filename="commandes_2025-01-16_143025.xlsx"
+
+**File Contents:**
+| N° Commande | Date | Statut | Nombre Articles | Sous-total HT (TND) | TVA (TND) | Total TTC (TND) | Produits |
+|-------------|------|--------|-----------------|---------------------|-----------|-----------------|----------|
+| ORD-2025-00789 | 16/01/2025 14:30 | DELIVERED | 3 | 12450.250 | 2490.050 | 14940.300 | PROD-001 (Product A) x10; PROD-002 (Product B) x25 |
+
 ### Chat
 
 #### Get Conversation

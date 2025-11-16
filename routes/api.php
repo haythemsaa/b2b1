@@ -47,9 +47,17 @@ Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
         Route::prefix('orders')->group(function () {
             Route::get('/', [VendorOrderController::class, 'index']);
             Route::get('/stats', [VendorOrderController::class, 'stats']);
+            Route::get('/export', [VendorOrderController::class, 'export']);
+            Route::get('/csv-template', [VendorOrderController::class, 'downloadCsvTemplate']);
             Route::post('/', [VendorOrderController::class, 'store']);
+            Route::post('/import-csv', [VendorOrderController::class, 'importCsv']);
+            Route::post('/confirm-csv-import', [VendorOrderController::class, 'confirmCsvImport']);
+            Route::post('/quick-order', [VendorOrderController::class, 'quickOrder']);
+            Route::post('/create-from-quick-order', [VendorOrderController::class, 'createFromQuickOrder']);
             Route::get('/{order}', [VendorOrderController::class, 'show']);
+            Route::get('/{order}/invoice', [VendorOrderController::class, 'downloadInvoice']);
             Route::post('/{order}/cancel', [VendorOrderController::class, 'cancel']);
+            Route::post('/{order}/reorder', [VendorOrderController::class, 'reorder']);
         });
 
         // Cart
