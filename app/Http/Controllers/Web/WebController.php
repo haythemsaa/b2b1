@@ -112,6 +112,14 @@ class WebController extends Controller
     }
 
     /**
+     * Vendor Shopping Cart
+     */
+    public function vendorCart()
+    {
+        return view('vendor.cart');
+    }
+
+    /**
      * Admin Dashboard
      */
     public function adminDashboard()
