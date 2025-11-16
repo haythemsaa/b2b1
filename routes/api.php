@@ -14,6 +14,10 @@ use App\Http\Controllers\Api\Vendor\InvoiceController as VendorInvoiceController
 use App\Http\Controllers\Api\Vendor\RfqController as VendorRfqController;
 use App\Http\Controllers\Api\Vendor\AccountController as VendorAccountController;
 use App\Http\Controllers\Api\Vendor\AnalyticsController as VendorAnalyticsController;
+use App\Http\Controllers\Api\Vendor\ApprovalController as VendorApprovalController;
+use App\Http\Controllers\Api\Vendor\NegotiationController as VendorNegotiationController;
+use App\Http\Controllers\Api\Vendor\DocumentController as VendorDocumentController;
+use App\Http\Controllers\Api\Vendor\NotificationController as VendorNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -126,6 +130,56 @@ Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
             Route::get('/events', [VendorAnalyticsController::class, 'events']);
             Route::get('/top-products', [VendorAnalyticsController::class, 'topProducts']);
             Route::post('/track', [VendorAnalyticsController::class, 'track']);
+        });
+
+        // Approval Workflows
+        Route::prefix('approvals')->group(function () {
+            Route::get('/workflows', [VendorApprovalController::class, 'workflows']);
+            Route::post('/workflows', [VendorApprovalController::class, 'createWorkflow']);
+            Route::put('/workflows/{workflow}', [VendorApprovalController::class, 'updateWorkflow']);
+            Route::delete('/workflows/{workflow}', [VendorApprovalController::class, 'deleteWorkflow']);
+            Route::get('/requests', [VendorApprovalController::class, 'requests']);
+            Route::get('/pending', [VendorApprovalController::class, 'pendingApprovals']);
+            Route::post('/requests/{approvalRequest}/approve', [VendorApprovalController::class, 'approve']);
+            Route::post('/requests/{approvalRequest}/reject', [VendorApprovalController::class, 'reject']);
+            Route::get('/stats', [VendorApprovalController::class, 'stats']);
+        });
+
+        // Price Negotiations
+        Route::prefix('negotiations')->group(function () {
+            Route::get('/', [VendorNegotiationController::class, 'index']);
+            Route::post('/rfq/{rfq}/initiate', [VendorNegotiationController::class, 'initiate']);
+            Route::get('/{negotiation}', [VendorNegotiationController::class, 'show']);
+            Route::post('/{negotiation}/counter', [VendorNegotiationController::class, 'counter']);
+            Route::post('/{negotiation}/accept', [VendorNegotiationController::class, 'accept']);
+            Route::post('/{negotiation}/reject', [VendorNegotiationController::class, 'reject']);
+            Route::post('/{negotiation}/withdraw', [VendorNegotiationController::class, 'withdraw']);
+            Route::get('/stats/summary', [VendorNegotiationController::class, 'stats']);
+        });
+
+        // Document Management
+        Route::prefix('documents')->group(function () {
+            Route::get('/', [VendorDocumentController::class, 'index']);
+            Route::post('/', [VendorDocumentController::class, 'upload']);
+            Route::get('/expiring', [VendorDocumentController::class, 'expiring']);
+            Route::get('/stats', [VendorDocumentController::class, 'stats']);
+            Route::get('/{document}', [VendorDocumentController::class, 'show']);
+            Route::get('/{document}/download', [VendorDocumentController::class, 'download']);
+            Route::post('/{document}/share', [VendorDocumentController::class, 'share']);
+            Route::post('/{document}/archive', [VendorDocumentController::class, 'archive']);
+            Route::delete('/{document}', [VendorDocumentController::class, 'delete']);
+        });
+
+        // Notifications
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [VendorNotificationController::class, 'index']);
+            Route::get('/unread-count', [VendorNotificationController::class, 'unreadCount']);
+            Route::get('/preferences', [VendorNotificationController::class, 'preferences']);
+            Route::post('/preferences', [VendorNotificationController::class, 'updatePreferences']);
+            Route::post('/mark-all-read', [VendorNotificationController::class, 'markAllAsRead']);
+            Route::post('/{notification}/mark-read', [VendorNotificationController::class, 'markAsRead']);
+            Route::post('/{notification}/archive', [VendorNotificationController::class, 'archive']);
+            Route::get('/stats', [VendorNotificationController::class, 'stats']);
         });
     });
 

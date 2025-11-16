@@ -2268,3 +2268,127 @@ Variables d'environnement:
 ---
 
 **Documentation générée le 16/01/2025**
+
+## 🔄 Approval Workflows (Phase 3)
+
+### GET /vendor/approvals/workflows
+List all approval workflows for vendor.
+
+### POST /vendor/approvals/workflows
+Create new approval workflow.
+
+**Request:**
+```json
+{
+  "name": "Large Order Approval",
+  "workflow_type": "order_approval",
+  "approval_chain": [123, 456],
+  "amount_threshold": 10000.00,
+  "requires_all_approvers": true,
+  "approval_timeout_hours": 48
+}
+```
+
+### GET /vendor/approvals/requests
+List approval requests for vendor.
+
+### POST /vendor/approvals/requests/{id}/approve
+Approve an approval request.
+
+### POST /vendor/approvals/requests/{id}/reject
+Reject an approval request with comments.
+
+---
+
+## 💰 Price Negotiations (Phase 3)
+
+### GET /vendor/negotiations
+List all price negotiations.
+
+### POST /vendor/negotiations/rfq/{rfq}/initiate
+Initiate price negotiation on an RFQ.
+
+**Request:**
+```json
+{
+  "negotiation_type": "price_reduction",
+  "original_price": 5000.00,
+  "proposed_price": 4500.00,
+  "max_rounds": 5
+}
+```
+
+### POST /vendor/negotiations/{id}/counter
+Make counter offer.
+
+### POST /vendor/negotiations/{id}/accept
+Accept negotiation.
+
+### POST /vendor/negotiations/{id}/reject
+Reject negotiation.
+
+---
+
+## 📄 Document Management (Phase 3)
+
+### GET /vendor/documents
+List all documents.
+
+### POST /vendor/documents
+Upload new document.
+
+**Request:** multipart/form-data
+- file: (binary)
+- document_type: invoice|contract|certificate
+- name: Document name
+- expiry_date: (optional)
+
+### GET /vendor/documents/{id}/download
+Download document file.
+
+### POST /vendor/documents/{id}/share
+Share document with user.
+
+### GET /vendor/documents/expiring
+Get documents expiring soon.
+
+---
+
+## 🔔 Notifications (Phase 3)
+
+### GET /vendor/notifications
+Get all notifications.
+
+**Query Parameters:**
+- unread_only: boolean
+- notification_type: string
+- limit: integer (default: 50)
+
+### GET /vendor/notifications/unread-count
+Get count of unread notifications.
+
+### POST /vendor/notifications/mark-all-read
+Mark all notifications as read.
+
+### GET /vendor/notifications/preferences
+Get notification preferences.
+
+### POST /vendor/notifications/preferences
+Update notification preferences.
+
+**Request:**
+```json
+{
+  "notification_type": "order_status_change",
+  "enabled": true,
+  "in_app": true,
+  "email": true,
+  "sms": false,
+  "push": false,
+  "frequency": "instant"
+}
+```
+
+---
+
+**Phase 3 Complete:** Approval Workflows, Price Negotiations, Document Management, and Advanced Notifications
