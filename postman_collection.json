@@ -1,0 +1,332 @@
+{
+  "info": {
+    "name": "B2B Wholesale Platform API",
+    "description": "Complete API collection for B2B Wholesale Platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.token) {",
+                  "    pm.collectionVariables.set('token', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"vendor1@example.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Recommendations",
+      "item": [
+        {
+          "name": "Get Personalized Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/recommendations/personalized?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "recommendations", "personalized"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trending Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/recommendations/trending",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "recommendations", "trending"]
+            }
+          }
+        },
+        {
+          "name": "Calculate Recommendations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/recommendations/calculate",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "recommendations", "calculate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Predictive Ordering",
+      "item": [
+        {
+          "name": "Get Predictions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/predictions?status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "predictions"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Generate Predictions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/predictions/generate",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "predictions", "generate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Automation",
+      "item": [
+        {
+          "name": "List Rules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/automation/rules",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "automation", "rules"]
+            }
+          }
+        },
+        {
+          "name": "Create Rule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Auto Reorder Low Stock\",\n  \"rule_type\": \"auto_reorder\",\n  \"trigger_conditions\": {\n    \"stock_level\": {\n      \"operator\": \"<=\",\n      \"value\": 10\n    }\n  },\n  \"actions\": [\"create_order\"],\n  \"trigger_frequency\": \"daily\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/vendor/automation/rules",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "automation", "rules"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Smart Search",
+      "item": [
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/search?q=electronics",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "electronics"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Popular Searches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/search/popular",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "search", "popular"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/analytics/dashboard?period=monthly",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "analytics", "dashboard"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/notifications?unread_only=true",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "notifications"],
+              "query": [
+                {
+                  "key": "unread_only",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor/notifications/unread-count",
+              "host": ["{{base_url}}"],
+              "path": ["vendor", "notifications", "unread-count"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
