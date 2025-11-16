@@ -1852,6 +1852,383 @@ Get negotiations for RFQ.
 
 ---
 
+# 👥 Multi-Account Management
+
+## POST /vendor/account
+
+Create a new account user (sub-account).
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "name": "John Doe",
+  "email": "john@company.com",
+  "phone": "+21612345678",
+  "position": "Purchasing Manager",
+  "department": "Procurement",
+  "permission_level": "manage",
+  "budget": {
+    "budget_period": "monthly",
+    "budget_limit": 5000.000,
+    "alert_threshold": 80.00
+  }
+}
+```
+
+**Validation**:
+- `name`: required, string, max:255
+- `email`: required, email, unique
+- `permission_level`: required, in:[full,manage,view]
+- `budget.budget_period`: required_with:budget, in:[daily,weekly,monthly,yearly,unlimited]
+- `budget.budget_limit`: required_with:budget, numeric, min:0
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Account user created successfully",
+  "data": {
+    "id": 1,
+    "vendor_id": 5,
+    "user_id": 150,
+    "name": "John Doe",
+    "email": "john@company.com",
+    "position": "Purchasing Manager",
+    "status": "inactive",
+    "is_primary": false,
+    "permissions": [...],
+    "budget": {
+      "budget_period": "monthly",
+      "budget_limit": "5000.000",
+      "budget_used": "0.000"
+    }
+  }
+}
+```
+
+## GET /vendor/account
+
+Get all account users for vendor.
+
+**Auth**: Required (Vendor)
+
+**Query Parameters**:
+- `status`: Filter by status (active, inactive, suspended)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "account_users": [
+      {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@company.com",
+        "position": "Purchasing Manager",
+        "status": "active",
+        "is_primary": false,
+        "permissions": [...],
+        "budget": {...}
+      }
+    ],
+    "stats": {
+      "total": 5,
+      "active": 3,
+      "inactive": 1,
+      "suspended": 1,
+      "with_budget": 3
+    }
+  }
+}
+```
+
+## GET /vendor/account/{accountUser}
+
+Get specific account user details.
+
+**Auth**: Required (Vendor)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "account_user": {...},
+    "budget_status": {
+      "budget_limit": "5000.000",
+      "budget_used": "1250.000",
+      "budget_remaining": "3750.000",
+      "usage_percentage": 25.00,
+      "is_over_budget": false,
+      "period_type": "monthly",
+      "period_start": "2025-01-01",
+      "period_end": "2025-01-31"
+    }
+  }
+}
+```
+
+## PUT /vendor/account/{accountUser}
+
+Update account user details.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "name": "John Doe",
+  "phone": "+21612345678",
+  "position": "Senior Purchasing Manager",
+  "department": "Procurement"
+}
+```
+
+## POST /vendor/account/{accountUser}/activate
+
+Activate account user.
+
+**Auth**: Required (Vendor)
+
+## POST /vendor/account/{accountUser}/suspend
+
+Suspend account user.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "reason": "Policy violation"
+}
+```
+
+## DELETE /vendor/account/{accountUser}
+
+Delete account user (cannot delete primary).
+
+**Auth**: Required (Vendor)
+
+## POST /vendor/account/{accountUser}/permissions
+
+Update permissions for account user.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "permission_type": "orders",
+  "can_view": true,
+  "can_create": true,
+  "can_edit": true,
+  "can_delete": false,
+  "can_approve": false
+}
+```
+
+**Permission Types**: orders, products, invoices, rfqs, analytics, account_management, chat
+
+## POST /vendor/account/{accountUser}/budget
+
+Update budget for account user.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "budget_period": "monthly",
+  "budget_limit": 10000.000,
+  "alert_threshold": 85.00
+}
+```
+
+---
+
+# 📊 Analytics Dashboard
+
+## GET /vendor/analytics/dashboard
+
+Get comprehensive analytics dashboard.
+
+**Auth**: Required (Vendor)
+
+**Query Parameters**:
+- `period`: daily, weekly, monthly (default), yearly
+- `limit`: Number of periods to return (default: 30)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "current_period": {
+      "date": "2025-01-01",
+      "period_type": "monthly",
+      "orders": {
+        "count": 45,
+        "total": "125000.000",
+        "average": "2777.778",
+        "completed": 42,
+        "cancelled": 3,
+        "conversion_rate": 93.33
+      },
+      "products": {
+        "viewed": 1250,
+        "added_to_cart": 180,
+        "unique_ordered": 95
+      },
+      "rfqs": {
+        "submitted": 8,
+        "quoted": 7,
+        "accepted": 5,
+        "conversion_rate": 62.50
+      },
+      "invoices": {
+        "created": 45,
+        "paid": 38,
+        "total": "125000.000",
+        "paid_total": "110000.000",
+        "payment_rate": 84.44
+      },
+      "engagement": {
+        "logins": 35,
+        "page_views": 890,
+        "chat_messages": 120,
+        "active_sessions": 28,
+        "engagement_score": 78.5
+      },
+      "performance": {
+        "avg_processing_time": 24.5,
+        "customer_satisfaction": 4.5
+      }
+    },
+    "previous_period": {...},
+    "trends": {
+      "orders_count": {
+        "value": 45,
+        "change": 12.50,
+        "direction": "up"
+      },
+      "orders_total": {
+        "value": "125000.000",
+        "change": 8.70,
+        "direction": "up"
+      }
+    },
+    "historical": [...],
+    "summary": {
+      "total_orders": 450,
+      "total_revenue": "1250000.000",
+      "total_rfqs": 95,
+      "total_invoices": 450,
+      "avg_order_value": "2777.778",
+      "avg_engagement": 75.5
+    }
+  }
+}
+```
+
+## GET /vendor/analytics/events
+
+Get event statistics.
+
+**Auth**: Required (Vendor)
+
+**Query Parameters**:
+- `period`: day, week (default), month, year
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "total_events": 2450,
+    "by_type": {
+      "page_view": 890,
+      "product_view": 1250,
+      "order_created": 45,
+      "login": 35
+    },
+    "by_category": {
+      "products": 1430,
+      "orders": 185,
+      "navigation": 835
+    },
+    "total_value": "125000.000",
+    "unique_sessions": 28
+  }
+}
+```
+
+## GET /vendor/analytics/top-products
+
+Get top performing products.
+
+**Auth**: Required (Vendor)
+
+**Query Parameters**:
+- `limit`: Number of products (default: 10)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "product_id": 10,
+      "views": 145,
+      "unique_sessions": 28
+    },
+    {
+      "product_id": 25,
+      "views": 132,
+      "unique_sessions": 24
+    }
+  ]
+}
+```
+
+## POST /vendor/analytics/track
+
+Track custom event.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "event_type": "custom_action",
+  "event_category": "products",
+  "event_action": "share",
+  "event_label": "Product #10",
+  "event_data": {
+    "product_id": 10,
+    "share_method": "email"
+  },
+  "event_value": 100.000
+}
+```
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Event tracked",
+  "data": {
+    "id": 1,
+    "event_type": "custom_action",
+    "event_time": "2025-01-16T10:30:00.000000Z"
+  }
+}
+```
+
+---
+
 ## 🔒 Rate Limiting
 
 L'API est limitée à:

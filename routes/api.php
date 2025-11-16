@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Api\Admin\RfqController as AdminRfqController;
 use App\Http\Controllers\Api\Vendor\InvoiceController as VendorInvoiceController;
 use App\Http\Controllers\Api\Vendor\RfqController as VendorRfqController;
+use App\Http\Controllers\Api\Vendor\AccountController as VendorAccountController;
+use App\Http\Controllers\Api\Vendor\AnalyticsController as VendorAnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -103,6 +105,27 @@ Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
             Route::post('/{rfq}/negotiations', [VendorRfqController::class, 'addNegotiation']);
             Route::post('/{rfq}/convert-to-order', [VendorRfqController::class, 'convertToOrder']);
             Route::post('/{rfq}/cancel', [VendorRfqController::class, 'cancel']);
+        });
+
+        // Account Management (Multi-User Accounts)
+        Route::prefix('account')->group(function () {
+            Route::get('/', [VendorAccountController::class, 'index']);
+            Route::post('/', [VendorAccountController::class, 'store']);
+            Route::get('/{accountUser}', [VendorAccountController::class, 'show']);
+            Route::put('/{accountUser}', [VendorAccountController::class, 'update']);
+            Route::post('/{accountUser}/activate', [VendorAccountController::class, 'activate']);
+            Route::post('/{accountUser}/suspend', [VendorAccountController::class, 'suspend']);
+            Route::delete('/{accountUser}', [VendorAccountController::class, 'destroy']);
+            Route::post('/{accountUser}/permissions', [VendorAccountController::class, 'updatePermissions']);
+            Route::post('/{accountUser}/budget', [VendorAccountController::class, 'updateBudget']);
+        });
+
+        // Analytics Dashboard
+        Route::prefix('analytics')->group(function () {
+            Route::get('/dashboard', [VendorAnalyticsController::class, 'dashboard']);
+            Route::get('/events', [VendorAnalyticsController::class, 'events']);
+            Route::get('/top-products', [VendorAnalyticsController::class, 'topProducts']);
+            Route::post('/track', [VendorAnalyticsController::class, 'track']);
         });
     });
 
