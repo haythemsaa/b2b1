@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product\ProductVariant;
+use App\Models\Product\ProductBundle;
 use App\Services\Catalog\CatalogService;
 use App\Services\Pricing\PricingService;
 use App\Services\Inventory\StockService;
@@ -308,5 +310,306 @@ class ProductController extends Controller
         $products = $this->stockService->getLowStockProducts($threshold);
 
         return response()->json($products);
+    }
+
+    // ==========================================
+    // Advanced Product System Methods
+    // ==========================================
+
+    /**
+     * Create advanced product (Simple, Variable, Bundle, Configurable)
+     */
+    public function createAdvanced(Request $request)
+    {
+        $validated = $this->validateAdvancedProduct($request);
+
+        try {
+            DB::beginTransaction();
+
+            // Create base product
+            $product = Product::create([
+                'vendor_id' => auth()->id(),
+                'category_id' => $validated['category_id'],
+                'name_fr' => $validated['name'],
+                'sku' => $validated['sku'],
+                'description_fr' => $validated['description'] ?? '',
+                'base_price' => $validated['price'] ?? 0,
+                'stock_quantity' => $validated['stock'] ?? 0,
+                'minimum_order_quantity' => $validated['moq'] ?? 1,
+                'is_active' => true,
+                'meta_data' => [
+                    'type' => $validated['type'],
+                    'attributes' => $validated['attributes'] ?? [],
+                    'compare_price' => $validated['compare_price'] ?? null,
+                ]
+            ]);
+
+            // Handle type-specific data
+            switch ($validated['type']) {
+                case 'variable':
+                    $this->createVariants($product, $validated['variants'] ?? []);
+                    break;
+
+                case 'bundle':
+                    $this->createBundleItems($product, $validated['bundle_items'] ?? []);
+                    break;
+
+                case 'configurable':
+                    $product->update([
+                        'meta_data' => array_merge($product->meta_data ?? [], [
+                            'custom_options' => $validated['custom_options'] ?? []
+                        ])
+                    ]);
+                    break;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'data' => $product->load(['variants', 'bundleItems']),
+                'message' => 'Product created successfully'
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to create product: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update advanced product
+     */
+    public function updateAdvanced(Request $request, Product $product)
+    {
+        $validated = $this->validateAdvancedProduct($request, $product);
+
+        try {
+            DB::beginTransaction();
+
+            // Update base product
+            $metaData = $product->meta_data ?? [];
+            $metaData['type'] = $validated['type'] ?? ($metaData['type'] ?? 'simple');
+            $metaData['attributes'] = $validated['attributes'] ?? ($metaData['attributes'] ?? []);
+            $metaData['compare_price'] = $validated['compare_price'] ?? ($metaData['compare_price'] ?? null);
+
+            $product->update([
+                'category_id' => $validated['category_id'] ?? $product->category_id,
+                'name_fr' => $validated['name'] ?? $product->name_fr,
+                'sku' => $validated['sku'] ?? $product->sku,
+                'description_fr' => $validated['description'] ?? $product->description_fr,
+                'base_price' => $validated['price'] ?? $product->base_price,
+                'stock_quantity' => $validated['stock'] ?? $product->stock_quantity,
+                'minimum_order_quantity' => $validated['moq'] ?? $product->minimum_order_quantity,
+                'meta_data' => $metaData,
+            ]);
+
+            $type = $metaData['type'];
+
+            // Handle type-specific updates
+            if ($type === 'variable' && isset($validated['variants'])) {
+                $product->variants()->delete();
+                $this->createVariants($product, $validated['variants']);
+            }
+
+            if ($type === 'bundle' && isset($validated['bundle_items'])) {
+                $product->bundleItems()->delete();
+                $this->createBundleItems($product, $validated['bundle_items']);
+            }
+
+            if ($type === 'configurable' && isset($validated['custom_options'])) {
+                $metaData['custom_options'] = $validated['custom_options'];
+                $product->update(['meta_data' => $metaData]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'data' => $product->load(['variants', 'bundleItems']),
+                'message' => 'Product updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to update product: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Validate advanced product data
+     */
+    private function validateAdvancedProduct(Request $request, ?Product $product = null): array
+    {
+        $rules = [
+            'type' => 'required|in:simple,variable,bundle,configurable',
+            'name' => 'required|string|max:255',
+            'sku' => 'required|string|max:100',
+            'description' => 'nullable|string',
+            'category_id' => 'required|exists:product_categories,id',
+            'attributes' => 'nullable|array',
+            'price' => 'nullable|numeric|min:0',
+            'compare_price' => 'nullable|numeric|min:0',
+            'stock' => 'nullable|integer|min:0',
+            'moq' => 'nullable|integer|min:1',
+        ];
+
+        // Type-specific validation
+        $type = $request->input('type');
+
+        if ($type === 'variable') {
+            $rules['variants'] = 'required|array|min:1';
+            $rules['variants.*.sku'] = 'required|string';
+            $rules['variants.*.name'] = 'nullable|string';
+            $rules['variants.*.attributes'] = 'required|array';
+            $rules['variants.*.price'] = 'required|numeric|min:0';
+            $rules['variants.*.stock'] = 'required|integer|min:0';
+            $rules['variants.*.moq'] = 'nullable|integer|min:1';
+            $rules['variants.*.is_active'] = 'boolean';
+        }
+
+        if ($type === 'bundle') {
+            $rules['bundle_items'] = 'required|array|min:1';
+            $rules['bundle_items.*.product_id'] = 'required|exists:products,id';
+            $rules['bundle_items.*.quantity'] = 'required|integer|min:1';
+            $rules['bundle_items.*.discount_percentage'] = 'nullable|numeric|min:0|max:100';
+        }
+
+        if ($type === 'configurable') {
+            $rules['custom_options'] = 'nullable|array';
+            $rules['custom_options.*.name'] = 'required|string';
+            $rules['custom_options.*.type'] = 'required|in:text,select,checkbox';
+            $rules['custom_options.*.price_modifier'] = 'nullable|numeric';
+            $rules['custom_options.*.required'] = 'boolean';
+        }
+
+        // Unique SKU validation
+        if ($product) {
+            $rules['sku'] .= '|unique:products,sku,' . $product->id;
+        } else {
+            $rules['sku'] .= '|unique:products,sku';
+        }
+
+        return $request->validate($rules);
+    }
+
+    /**
+     * Create product variants
+     */
+    private function createVariants(Product $product, array $variants): void
+    {
+        foreach ($variants as $variantData) {
+            ProductVariant::create([
+                'product_id' => $product->id,
+                'sku' => $variantData['sku'],
+                'name' => $variantData['name'] ?? null,
+                'attributes' => $variantData['attributes'],
+                'price' => $variantData['price'],
+                'compare_price' => $variantData['compare_price'] ?? null,
+                'stock' => $variantData['stock'] ?? 0,
+                'moq' => $variantData['moq'] ?? $product->minimum_order_quantity,
+                'image' => $variantData['image'] ?? null,
+                'is_active' => $variantData['is_active'] ?? true,
+            ]);
+        }
+    }
+
+    /**
+     * Create bundle items
+     */
+    private function createBundleItems(Product $product, array $items): void
+    {
+        foreach ($items as $itemData) {
+            ProductBundle::create([
+                'bundle_product_id' => $product->id,
+                'product_id' => $itemData['product_id'],
+                'quantity' => $itemData['quantity'],
+                'discount_percentage' => $itemData['discount_percentage'] ?? 0,
+            ]);
+        }
+    }
+
+    /**
+     * Duplicate product
+     */
+    public function duplicate(Product $product)
+    {
+        try {
+            DB::beginTransaction();
+
+            $newProduct = $product->replicate();
+            $newProduct->sku = $product->sku . '-copy-' . time();
+            $newProduct->name_fr = $product->name_fr . ' (Copy)';
+            $newProduct->save();
+
+            $metaType = $product->meta_data['type'] ?? 'simple';
+
+            // Duplicate variants
+            if ($metaType === 'variable') {
+                foreach ($product->variants as $variant) {
+                    $newVariant = $variant->replicate();
+                    $newVariant->product_id = $newProduct->id;
+                    $newVariant->sku = $variant->sku . '-copy-' . time();
+                    $newVariant->save();
+                }
+            }
+
+            // Duplicate bundle items
+            if ($metaType === 'bundle') {
+                foreach ($product->bundleItems as $item) {
+                    $newItem = $item->replicate();
+                    $newItem->bundle_product_id = $newProduct->id;
+                    $newItem->save();
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'data' => $newProduct->load(['variants', 'bundleItems']),
+                'message' => 'Product duplicated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to duplicate product: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk update stock
+     */
+    public function bulkUpdateStock(Request $request)
+    {
+        $validated = $request->validate([
+            'updates' => 'required|array',
+            'updates.*.product_id' => 'required|exists:products,id',
+            'updates.*.stock' => 'required|integer|min:0',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($validated['updates'] as $update) {
+                Product::where('id', $update['product_id'])
+                    ->update(['stock_quantity' => $update['stock']]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Stock updated successfully for ' . count($validated['updates']) . ' products'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to update stock: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

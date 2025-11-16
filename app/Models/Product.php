@@ -10,6 +10,7 @@ class Product extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'vendor_id',
         'sku',
         'name_fr',
         'name_ar',
@@ -25,6 +26,7 @@ class Product extends Model
         'alert_stock_level',
         'is_active',
         'allow_backorder',
+        'meta_data',
     ];
 
     protected $casts = [
@@ -35,6 +37,7 @@ class Product extends Model
         'minimum_order_quantity' => 'integer',
         'order_multiple' => 'integer',
         'alert_stock_level' => 'integer',
+        'meta_data' => 'array',
     ];
 
     // Relations
@@ -76,6 +79,32 @@ class Product extends Model
     public function promotionEligibility()
     {
         return $this->hasMany(PromotionEligibility::class);
+    }
+
+    // Advanced Product System Relations
+    public function variants()
+    {
+        return $this->hasMany(\App\Models\Product\ProductVariant::class);
+    }
+
+    public function bundleItems()
+    {
+        return $this->hasMany(\App\Models\Product\ProductBundle::class, 'bundle_product_id');
+    }
+
+    public function bundlesIncludedIn()
+    {
+        return $this->hasMany(\App\Models\Product\ProductBundle::class, 'product_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(\App\Models\Product\ProductReview::class);
+    }
+
+    public function priceTiers()
+    {
+        return $this->hasMany(\App\Models\Product\ProductPriceTier::class);
     }
 
     // Scopes
