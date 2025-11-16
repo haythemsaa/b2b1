@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\Admin\VendorController as AdminVendorController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
+use App\Http\Controllers\Api\Admin\RfqController as AdminRfqController;
+use App\Http\Controllers\Api\Vendor\InvoiceController as VendorInvoiceController;
+use App\Http\Controllers\Api\Vendor\RfqController as VendorRfqController;
 
 /*
 |--------------------------------------------------------------------------
@@ -75,6 +78,32 @@ Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
             Route::post('/mark-as-read', [VendorChatController::class, 'markAsRead']);
             Route::get('/unread-count', [VendorChatController::class, 'unreadCount']);
         });
+
+        // Invoices & Credit
+        Route::prefix('invoices')->group(function () {
+            Route::get('/', [VendorInvoiceController::class, 'index']);
+            Route::get('/credit-stats', [VendorInvoiceController::class, 'creditStats']);
+            Route::get('/overdue', [VendorInvoiceController::class, 'overdue']);
+            Route::get('/upcoming', [VendorInvoiceController::class, 'upcoming']);
+            Route::get('/payment-history', [VendorInvoiceController::class, 'paymentHistory']);
+            Route::get('/{invoice}', [VendorInvoiceController::class, 'show']);
+            Route::post('/{invoice}/payment', [VendorInvoiceController::class, 'makePayment']);
+        });
+
+        // RFQs (Request for Quotation)
+        Route::prefix('rfqs')->group(function () {
+            Route::get('/', [VendorRfqController::class, 'index']);
+            Route::post('/', [VendorRfqController::class, 'store']);
+            Route::get('/{rfq}', [VendorRfqController::class, 'show']);
+            Route::put('/{rfq}', [VendorRfqController::class, 'update']);
+            Route::post('/{rfq}/submit', [VendorRfqController::class, 'submit']);
+            Route::post('/{rfq}/quotes/{quote}/accept', [VendorRfqController::class, 'acceptQuote']);
+            Route::post('/{rfq}/quotes/{quote}/reject', [VendorRfqController::class, 'rejectQuote']);
+            Route::get('/{rfq}/negotiations', [VendorRfqController::class, 'negotiations']);
+            Route::post('/{rfq}/negotiations', [VendorRfqController::class, 'addNegotiation']);
+            Route::post('/{rfq}/convert-to-order', [VendorRfqController::class, 'convertToOrder']);
+            Route::post('/{rfq}/cancel', [VendorRfqController::class, 'cancel']);
+        });
     });
 
     // Admin routes
@@ -138,6 +167,18 @@ Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
             Route::post('/{conversation}/mark-as-read', [AdminChatController::class, 'markAsRead']);
             Route::post('/{conversation}/archive', [AdminChatController::class, 'archive']);
             Route::post('/{conversation}/reactivate', [AdminChatController::class, 'reactivate']);
+        });
+
+        // RFQs (Request for Quotation) - Admin
+        Route::prefix('rfqs')->group(function () {
+            Route::get('/', [AdminRfqController::class, 'index']);
+            Route::get('/stats', [AdminRfqController::class, 'stats']);
+            Route::get('/{rfq}', [AdminRfqController::class, 'show']);
+            Route::post('/{rfq}/quote', [AdminRfqController::class, 'createQuote']);
+            Route::post('/quotes/{quote}/send', [AdminRfqController::class, 'sendQuote']);
+            Route::get('/{rfq}/negotiations', [AdminRfqController::class, 'negotiations']);
+            Route::post('/{rfq}/negotiations', [AdminRfqController::class, 'addNegotiation']);
+            Route::post('/{rfq}/cancel', [AdminRfqController::class, 'cancel']);
         });
     });
 });

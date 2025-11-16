@@ -1311,6 +1311,547 @@ Authorization: Bearer {token}
 }
 ```
 
+---
+
+# 💳 Invoices & Credit Management
+
+## GET /vendor/invoices
+
+Get list of vendor's invoices with pagination and filters.
+
+**Auth**: Required (Vendor)
+
+**Query Parameters**:
+- `status`: Filter by status (pending, paid, partial, overdue, cancelled)
+- `start_date`: Filter from date (YYYY-MM-DD)
+- `end_date`: Filter to date (YYYY-MM-DD)
+- `per_page`: Items per page (default: 20)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "current_page": 1,
+    "data": [
+      {
+        "id": 1,
+        "invoice_number": "INV-2025-00001",
+        "order_id": 123,
+        "vendor_id": 5,
+        "invoice_date": "2025-01-15",
+        "due_date": "2025-02-14",
+        "paid_date": null,
+        "subtotal": "1000.000",
+        "tax": "190.000",
+        "total": "1190.000",
+        "paid_amount": "0.000",
+        "payment_terms": "net_30",
+        "early_payment_discount": "2.00",
+        "early_payment_days": 10,
+        "early_payment_deadline": "2025-01-25",
+        "status": "pending",
+        "notes": null,
+        "created_at": "2025-01-15T10:30:00.000000Z",
+        "order": {
+          "id": 123,
+          "order_number": "ORD-2025-00123"
+        },
+        "payments": []
+      }
+    ],
+    "total": 15
+  }
+}
+```
+
+## GET /vendor/invoices/{invoice}
+
+Get specific invoice details including payments and early payment information.
+
+**Auth**: Required (Vendor)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "invoice": {
+      "id": 1,
+      "invoice_number": "INV-2025-00001",
+      "order": {...},
+      "payments": [...],
+      "reminders": [...]
+    },
+    "early_payment_info": {
+      "eligible": true,
+      "discount_percentage": 2.00,
+      "discount_amount": "23.800",
+      "amount_to_pay": "1166.200",
+      "savings": "23.800",
+      "deadline": "2025-01-25T00:00:00.000000Z",
+      "days_remaining": 5
+    }
+  }
+}
+```
+
+## POST /vendor/invoices/{invoice}/payment
+
+Record a payment on an invoice.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "amount": 500.000,
+  "payment_method": "bank_transfer",
+  "transaction_reference": "TRANS-123456",
+  "notes": "Partial payment"
+}
+```
+
+**Validation**:
+- `amount`: required, numeric, min:0.001
+- `payment_method`: required, in:[bank_transfer,check,cash,card,other]
+- `transaction_reference`: optional, string, max:255
+- `notes`: optional, string
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Payment recorded successfully",
+  "data": {
+    "invoice": {
+      "id": 1,
+      "paid_amount": "500.000",
+      "status": "partial",
+      "payments": [
+        {
+          "id": 1,
+          "payment_number": "PAY-2025-00001",
+          "amount": "500.000",
+          "payment_method": "bank_transfer",
+          "transaction_reference": "TRANS-123456",
+          "payment_date": "2025-01-16"
+        }
+      ]
+    },
+    "remaining_amount": "690.000"
+  }
+}
+```
+
+## GET /vendor/invoices/credit-stats
+
+Get vendor's credit statistics and overdue/upcoming invoices.
+
+**Auth**: Required (Vendor)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "credit": {
+      "credit_limit": "10000.000",
+      "credit_used": "3500.000",
+      "available_credit": "6500.000",
+      "credit_utilization": 35.00,
+      "is_on_hold": false,
+      "hold_reason": null,
+      "payment_terms": "net_30"
+    },
+    "overdue_invoices": [...],
+    "upcoming_invoices": [...]
+  }
+}
+```
+
+## GET /vendor/invoices/overdue
+
+Get all overdue invoices.
+
+**Auth**: Required (Vendor)
+
+## GET /vendor/invoices/upcoming
+
+Get upcoming invoices (due within specified days).
+
+**Auth**: Required (Vendor)
+
+**Query Parameters**:
+- `days`: Number of days ahead (default: 7)
+
+## GET /vendor/invoices/payment-history
+
+Get vendor's complete payment history.
+
+**Auth**: Required (Vendor)
+
+**Query Parameters**:
+- `start_date`: Filter from date
+- `end_date`: Filter to date
+
+---
+
+# 📋 RFQ System (Request for Quotation)
+
+## POST /vendor/rfqs
+
+Create a new RFQ.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "title": "Bulk Order Request - 1000 Units",
+  "description": "Need special pricing for large order",
+  "target_budget": 50000.000,
+  "required_delivery_date": "2025-03-15",
+  "priority": "high",
+  "expires_in_days": 30,
+  "items": [
+    {
+      "product_id": 10,
+      "sku": "PROD-001",
+      "name": "Product Name",
+      "description": "Special requirements",
+      "quantity": 1000,
+      "unit": "pcs",
+      "specifications": {
+        "color": "blue",
+        "size": "large"
+      }
+    }
+  ]
+}
+```
+
+**Validation**:
+- `title`: required, string, max:255
+- `description`: optional, string
+- `target_budget`: optional, numeric, min:0
+- `required_delivery_date`: optional, date, after:today
+- `priority`: required, in:[low,medium,high,urgent]
+- `expires_in_days`: optional, integer, min:1, max:90
+- `items`: required, array, min:1
+- `items.*.product_id`: optional, exists:products
+- `items.*.name`: required, string
+- `items.*.quantity`: required, integer, min:1
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "RFQ created successfully",
+  "data": {
+    "id": 1,
+    "rfq_number": "RFQ-2025-00001",
+    "vendor_id": 5,
+    "title": "Bulk Order Request - 1000 Units",
+    "description": "Need special pricing for large order",
+    "target_budget": "50000.000",
+    "required_delivery_date": "2025-03-15",
+    "status": "draft",
+    "priority": "high",
+    "expires_at": "2025-02-15T12:00:00.000000Z",
+    "items": [...]
+  }
+}
+```
+
+## GET /vendor/rfqs
+
+Get list of vendor's RFQs.
+
+**Auth**: Required (Vendor)
+
+**Query Parameters**:
+- `status`: Filter by status
+- `active_only`: Boolean, only active RFQs
+- `per_page`: Items per page
+
+## GET /vendor/rfqs/{rfq}
+
+Get specific RFQ details.
+
+**Auth**: Required (Vendor)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "rfq": {
+      "id": 1,
+      "rfq_number": "RFQ-2025-00001",
+      "title": "Bulk Order Request",
+      "status": "quoted",
+      "items": [...],
+      "quotes": [
+        {
+          "id": 1,
+          "quote_number": "QUO-2025-00001",
+          "subtotal": "45000.000",
+          "tax": "8550.000",
+          "total": "53550.000",
+          "payment_terms": "net_30",
+          "delivery_days": 20,
+          "status": "sent",
+          "valid_until": "2025-02-15T00:00:00.000000Z"
+        }
+      ],
+      "negotiations": [...]
+    },
+    "unread_count": 2
+  }
+}
+```
+
+## PUT /vendor/rfqs/{rfq}
+
+Update RFQ (only draft status).
+
+**Auth**: Required (Vendor)
+
+## POST /vendor/rfqs/{rfq}/submit
+
+Submit RFQ for review.
+
+**Auth**: Required (Vendor)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "RFQ submitted successfully",
+  "data": {
+    "id": 1,
+    "status": "submitted",
+    "submitted_at": "2025-01-16T10:30:00.000000Z"
+  }
+}
+```
+
+## POST /vendor/rfqs/{rfq}/quotes/{quote}/accept
+
+Accept a quote.
+
+**Auth**: Required (Vendor)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Quote accepted successfully",
+  "data": {...}
+}
+```
+
+## POST /vendor/rfqs/{rfq}/quotes/{quote}/reject
+
+Reject a quote.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "reason": "Price is higher than budget"
+}
+```
+
+## POST /vendor/rfqs/{rfq}/negotiations
+
+Add negotiation message or counter-offer.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "message": "Can you provide a better price for this quantity?",
+  "is_counter_offer": true,
+  "proposed_price": 48000.000,
+  "proposed_terms": "net_30",
+  "proposed_delivery_days": 25
+}
+```
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Message added successfully",
+  "data": {
+    "id": 1,
+    "rfq_id": 1,
+    "user_id": 5,
+    "message": "Can you provide a better price?",
+    "is_counter_offer": true,
+    "proposed_price": "48000.000",
+    "created_at": "2025-01-16T10:30:00.000000Z"
+  }
+}
+```
+
+## GET /vendor/rfqs/{rfq}/negotiations
+
+Get all negotiations for an RFQ.
+
+**Auth**: Required (Vendor)
+
+## POST /vendor/rfqs/{rfq}/convert-to-order
+
+Convert accepted RFQ to order.
+
+**Auth**: Required (Vendor)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "RFQ converted to order successfully",
+  "data": {
+    "order": {
+      "id": 150,
+      "order_number": "ORD-2025-00150",
+      "total": "53550.000",
+      "items": [...]
+    },
+    "rfq": {
+      "id": 1,
+      "status": "converted"
+    }
+  }
+}
+```
+
+## POST /vendor/rfqs/{rfq}/cancel
+
+Cancel RFQ.
+
+**Auth**: Required (Vendor)
+
+**Request**:
+```json
+{
+  "reason": "Requirements changed"
+}
+```
+
+---
+
+# 🔧 Admin RFQ Management
+
+## GET /admin/rfqs
+
+Get all RFQs (admin view).
+
+**Auth**: Required (Admin)
+
+**Query Parameters**:
+- `status`: Filter by status
+- `priority`: Filter by priority
+- `pending_review`: Boolean, only pending RFQs
+- `active_only`: Boolean, only active RFQs
+
+## GET /admin/rfqs/stats
+
+Get RFQ statistics.
+
+**Auth**: Required (Admin)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "data": {
+    "total": 45,
+    "pending_review": 8,
+    "quoted": 12,
+    "negotiating": 5,
+    "accepted": 15,
+    "active": 25,
+    "high_priority": 3
+  }
+}
+```
+
+## POST /admin/rfqs/{rfq}/quote
+
+Create quote for RFQ.
+
+**Auth**: Required (Admin)
+
+**Request**:
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "unit_price": 45.000,
+      "notes": "Bulk discount applied"
+    }
+  ],
+  "payment_terms": "net_30",
+  "delivery_days": 20,
+  "valid_for_days": 30,
+  "terms_and_conditions": "Standard terms apply",
+  "notes": "Best price for this quantity"
+}
+```
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Quote created successfully",
+  "data": {
+    "id": 1,
+    "quote_number": "QUO-2025-00001",
+    "rfq_id": 1,
+    "subtotal": "45000.000",
+    "tax": "8550.000",
+    "total": "53550.000",
+    "status": "draft"
+  }
+}
+```
+
+## POST /admin/rfqs/quotes/{quote}/send
+
+Send quote to vendor.
+
+**Auth**: Required (Admin)
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Quote sent to vendor successfully",
+  "data": {...}
+}
+```
+
+## POST /admin/rfqs/{rfq}/negotiations
+
+Add admin message to negotiation.
+
+**Auth**: Required (Admin)
+
+## GET /admin/rfqs/{rfq}/negotiations
+
+Get negotiations for RFQ.
+
+**Auth**: Required (Admin)
+
+---
+
 ## 🔒 Rate Limiting
 
 L'API est limitée à:
