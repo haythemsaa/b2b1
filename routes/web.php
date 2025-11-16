@@ -15,6 +15,7 @@ Route::get('/login', [WebController::class, 'login'])->name('login');
 Route::prefix('vendor')->middleware('web')->group(function () {
     Route::get('/dashboard', [WebController::class, 'vendorDashboard'])->name('vendor.dashboard');
     Route::get('/products', [WebController::class, 'vendorProducts'])->name('vendor.products');
+    Route::get('/products-advanced', [WebController::class, 'vendorProductsAdvanced'])->name('vendor.products.advanced');
     Route::get('/products/{id}', [WebController::class, 'vendorProductShow'])->name('vendor.products.show');
     Route::get('/orders', [WebController::class, 'vendorOrders'])->name('vendor.orders');
     Route::get('/orders/{id}', [WebController::class, 'vendorOrderShow'])->name('vendor.orders.show');
@@ -39,4 +40,10 @@ Route::prefix('admin')->middleware('web')->group(function () {
     Route::get('/orders/{id}', [WebController::class, 'adminOrderShow'])->name('admin.orders.show');
     Route::get('/rfqs', [WebController::class, 'adminRfqs'])->name('admin.rfqs');
     Route::get('/rfqs/{id}', [WebController::class, 'adminRfqShow'])->name('admin.rfqs.show');
+
+    // Advanced Product System
+    Route::get('/categories', [WebController::class, 'adminCategories'])->name('admin.categories');
+    Route::get('/attributes', [WebController::class, 'adminAttributes'])->name('admin.attributes');
+    Route::get('/product-configurator', [WebController::class, 'adminProductConfigurator'])->name('admin.product.configurator');
+    Route::get('/category-attributes', [WebController::class, 'adminCategoryAttributes'])->name('admin.category.attributes');
 });

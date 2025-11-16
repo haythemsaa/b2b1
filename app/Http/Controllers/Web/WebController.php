@@ -120,6 +120,14 @@ class WebController extends Controller
     }
 
     /**
+     * Vendor Advanced Products Catalog
+     */
+    public function vendorProductsAdvanced()
+    {
+        return view('vendor.products-advanced');
+    }
+
+    /**
      * Admin Dashboard
      */
     public function adminDashboard()
@@ -189,5 +197,37 @@ class WebController extends Controller
     public function adminRfqShow($id)
     {
         return view('admin.rfq-detail', compact('id'));
+    }
+
+    /**
+     * Admin Categories Management
+     */
+    public function adminCategories()
+    {
+        return view('admin.categories');
+    }
+
+    /**
+     * Admin Attributes Management
+     */
+    public function adminAttributes()
+    {
+        return view('admin.attributes');
+    }
+
+    /**
+     * Admin Product Configurator
+     */
+    public function adminProductConfigurator()
+    {
+        return view('admin.product-configurator');
+    }
+
+    /**
+     * Admin Category-Attributes Assignment
+     */
+    public function adminCategoryAttributes()
+    {
+        return view('admin.category-attributes');
     }
 }
