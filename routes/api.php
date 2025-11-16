@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\Vendor\RecommendationController as VendorRecommenda
 use App\Http\Controllers\Api\Vendor\PredictionController as VendorPredictionController;
 use App\Http\Controllers\Api\Vendor\AutomationController as VendorAutomationController;
 use App\Http\Controllers\Api\Vendor\SmartSearchController as VendorSmartSearchController;
+use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\Admin\AttributeController as AdminAttributeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -250,6 +252,39 @@ Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
 
             // Visibility management
             Route::post('/{product}/vendor-visibility', [AdminProductController::class, 'setVendorVisibility']);
+
+            // Advanced Product System
+            Route::post('/advanced', [AdminProductController::class, 'createAdvanced']);
+            Route::put('/{product}/advanced', [AdminProductController::class, 'updateAdvanced']);
+            Route::post('/{product}/duplicate', [AdminProductController::class, 'duplicate']);
+            Route::post('/bulk-update-stock', [AdminProductController::class, 'bulkUpdateStock']);
+        });
+
+        // Categories (Advanced Product System)
+        Route::prefix('categories')->group(function () {
+            Route::get('/', [AdminCategoryController::class, 'index']);
+            Route::post('/', [AdminCategoryController::class, 'store']);
+            Route::get('/stats', [AdminCategoryController::class, 'stats']);
+            Route::get('/{category}', [AdminCategoryController::class, 'show']);
+            Route::put('/{category}', [AdminCategoryController::class, 'update']);
+            Route::delete('/{category}', [AdminCategoryController::class, 'destroy']);
+
+            // Attribute assignments
+            Route::get('/{category}/attributes', [AdminCategoryController::class, 'attributes']);
+            Route::post('/{category}/attributes', [AdminCategoryController::class, 'attachAttribute']);
+            Route::put('/{category}/attributes/{attribute}', [AdminCategoryController::class, 'updateAttribute']);
+            Route::delete('/{category}/attributes/{attribute}', [AdminCategoryController::class, 'detachAttribute']);
+        });
+
+        // Attributes (Advanced Product System)
+        Route::prefix('attributes')->group(function () {
+            Route::get('/', [AdminAttributeController::class, 'index']);
+            Route::post('/', [AdminAttributeController::class, 'store']);
+            Route::get('/stats', [AdminAttributeController::class, 'stats']);
+            Route::get('/{attribute}', [AdminAttributeController::class, 'show']);
+            Route::put('/{attribute}', [AdminAttributeController::class, 'update']);
+            Route::delete('/{attribute}', [AdminAttributeController::class, 'destroy']);
+            Route::post('/{attribute}/validate', [AdminAttributeController::class, 'validateValue']);
         });
 
         // Orders
