@@ -24,6 +24,7 @@ Route::prefix('vendor')->middleware('web')->group(function () {
     Route::get('/recommendations', [WebController::class, 'vendorRecommendations'])->name('vendor.recommendations');
     Route::get('/approvals', [WebController::class, 'vendorApprovals'])->name('vendor.approvals');
     Route::get('/documents', [WebController::class, 'vendorDocuments'])->name('vendor.documents');
+    Route::get('/profile', [WebController::class, 'vendorProfile'])->name('vendor.profile');
 });
 
 // Admin Routes (protected)

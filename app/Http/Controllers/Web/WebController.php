@@ -104,6 +104,14 @@ class WebController extends Controller
     }
 
     /**
+     * Vendor Profile & Settings
+     */
+    public function vendorProfile()
+    {
+        return view('vendor.profile');
+    }
+
+    /**
      * Admin Dashboard
      */
     public function adminDashboard()

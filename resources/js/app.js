@@ -1,5 +1,6 @@
 import './bootstrap';
 import './api';
+import './utils';
 import Alpine from 'alpinejs';
 import focus from '@alpinejs/focus';
 import collapse from '@alpinejs/collapse';

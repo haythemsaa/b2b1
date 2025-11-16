@@ -49,11 +49,8 @@
                             x-transition
                             class="absolute bottom-full left-0 w-full mb-2 bg-white rounded-lg shadow-lg"
                         >
-                            <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">
-                                Profile
-                            </a>
-                            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                Settings
+                            <a href="/vendor/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                                Profile & Settings
                             </a>
                             <button
                                 @click="logout()"
