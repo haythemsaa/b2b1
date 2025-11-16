@@ -2392,3 +2392,82 @@ Update notification preferences.
 ---
 
 **Phase 3 Complete:** Approval Workflows, Price Negotiations, Document Management, and Advanced Notifications
+
+## 🤖 AI & Automation (Phase 4)
+
+### GET /vendor/recommendations/personalized
+Get personalized product recommendations based on order history.
+
+### GET /vendor/recommendations/trending
+Get currently trending products.
+
+### GET /vendor/recommendations/product/{id}
+Get recommendations for a specific product.
+
+**Query Parameters:**
+- type: frequently_bought_together|similar_products|trending
+- limit: integer (default: 10)
+
+### POST /vendor/recommendations/calculate
+Calculate new recommendations based on latest data.
+
+---
+
+## 🔮 Predictive Ordering (Phase 4)
+
+### GET /vendor/predictions
+Get order predictions for products.
+
+**Query Parameters:**
+- status: pending|ordered|skipped|expired
+- limit: integer (default: 50)
+
+### POST /vendor/predictions/generate
+Generate new predictions based on historical data.
+
+---
+
+## ⚙️ Automation Rules (Phase 4)
+
+### GET /vendor/automation/rules
+List all automation rules.
+
+### POST /vendor/automation/rules
+Create new automation rule.
+
+**Request:**
+```json
+{
+  "name": "Auto Reorder Low Stock",
+  "rule_type": "auto_reorder",
+  "trigger_conditions": {"stock_level": {"operator": "<=", "value": 10}},
+  "actions": ["create_order"],
+  "trigger_frequency": "daily"
+}
+```
+
+### GET /vendor/automation/rules/{id}/executions
+Get execution history for a rule.
+
+---
+
+## 🔍 Smart Search (Phase 4)
+
+### GET /vendor/search
+Perform smart product search.
+
+**Query Parameters:**
+- q: search query (required)
+- filters: JSON object with category, min_price, max_price
+- context: catalog|rfq|reorder
+
+### GET /vendor/search/popular
+Get most popular search queries.
+
+### GET /vendor/search/failed
+Get searches with no results (for optimization).
+
+---
+
+**Phase 4 Complete:** AI Recommendations, Predictive Ordering, Automation, and Smart Search
+**Project Status:** ALL PHASES COMPLETED ✅

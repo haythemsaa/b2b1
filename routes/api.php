@@ -18,6 +18,10 @@ use App\Http\Controllers\Api\Vendor\ApprovalController as VendorApprovalControll
 use App\Http\Controllers\Api\Vendor\NegotiationController as VendorNegotiationController;
 use App\Http\Controllers\Api\Vendor\DocumentController as VendorDocumentController;
 use App\Http\Controllers\Api\Vendor\NotificationController as VendorNotificationController;
+use App\Http\Controllers\Api\Vendor\RecommendationController as VendorRecommendationController;
+use App\Http\Controllers\Api\Vendor\PredictionController as VendorPredictionController;
+use App\Http\Controllers\Api\Vendor\AutomationController as VendorAutomationController;
+use App\Http\Controllers\Api\Vendor\SmartSearchController as VendorSmartSearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -180,6 +184,35 @@ Route::middleware(['auth:sanctum', 'set.locale'])->group(function () {
             Route::post('/{notification}/mark-read', [VendorNotificationController::class, 'markAsRead']);
             Route::post('/{notification}/archive', [VendorNotificationController::class, 'archive']);
             Route::get('/stats', [VendorNotificationController::class, 'stats']);
+        });
+
+        // AI Recommendations
+        Route::prefix('recommendations')->group(function () {
+            Route::get('/personalized', [VendorRecommendationController::class, 'personalized']);
+            Route::get('/trending', [VendorRecommendationController::class, 'trending']);
+            Route::get('/product/{product}', [VendorRecommendationController::class, 'forProduct']);
+            Route::post('/calculate', [VendorRecommendationController::class, 'calculate']);
+            Route::get('/stats', [VendorRecommendationController::class, 'stats']);
+        });
+
+        // Predictive Ordering
+        Route::prefix('predictions')->group(function () {
+            Route::get('/', [VendorPredictionController::class, 'index']);
+            Route::post('/generate', [VendorPredictionController::class, 'generate']);
+        });
+
+        // Automation Rules
+        Route::prefix('automation')->group(function () {
+            Route::get('/rules', [VendorAutomationController::class, 'index']);
+            Route::post('/rules', [VendorAutomationController::class, 'store']);
+            Route::get('/rules/{rule}/executions', [VendorAutomationController::class, 'executions']);
+        });
+
+        // Smart Search
+        Route::prefix('search')->group(function () {
+            Route::get('/', [VendorSmartSearchController::class, 'search']);
+            Route::get('/popular', [VendorSmartSearchController::class, 'popular']);
+            Route::get('/failed', [VendorSmartSearchController::class, 'failed']);
         });
     });
 
