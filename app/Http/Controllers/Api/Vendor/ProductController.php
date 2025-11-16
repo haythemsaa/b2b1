@@ -30,6 +30,7 @@ class ProductController extends Controller
         // Add pricing for current vendor to each product
         $products->getCollection()->transform(function ($product) use ($request) {
             $pricing = $this->pricingService->calculatePrice($product, $request->user(), 1);
+            $metaData = $product->meta_data ?? [];
 
             return [
                 'id' => $product->id,
@@ -50,6 +51,10 @@ class ProductController extends Controller
                 'primary_image' => $product->primaryImage ? [
                     'url' => $product->primaryImage->getUrl(),
                 ] : null,
+                // Advanced Product System
+                'type' => $metaData['type'] ?? 'simple',
+                'compare_price' => $metaData['compare_price'] ?? null,
+                'variant_count' => $metaData['type'] === 'variable' ? $product->variants()->count() : 0,
             ];
         });
 
@@ -69,7 +74,11 @@ class ProductController extends Controller
         $locale = $request->user()->locale;
         $pricingTiers = $this->pricingService->getPricingTiers($product, $request->user());
 
-        return response()->json([
+        // Get product type from meta_data
+        $metaData = $product->meta_data ?? [];
+        $productType = $metaData['type'] ?? 'simple';
+
+        $response = [
             'id' => $product->id,
             'sku' => $product->sku,
             'name' => $product->getName($locale),
@@ -92,7 +101,48 @@ class ProductController extends Controller
                 'is_primary' => $img->is_primary,
             ]),
             'pricing_tiers' => $pricingTiers,
-        ]);
+            // Advanced Product System
+            'type' => $productType,
+            'attributes' => $metaData['attributes'] ?? [],
+            'compare_price' => $metaData['compare_price'] ?? null,
+        ];
+
+        // Load type-specific data
+        if ($productType === 'variable') {
+            $response['variants'] = $product->variants->map(fn($v) => [
+                'id' => $v->id,
+                'sku' => $v->sku,
+                'name' => $v->name,
+                'display_name' => $v->display_name,
+                'attributes' => $v->attributes,
+                'price' => $v->price,
+                'compare_price' => $v->compare_price,
+                'stock' => $v->stock,
+                'moq' => $v->moq,
+                'image' => $v->image,
+                'is_active' => $v->is_active,
+                'discount_percentage' => $v->discount_percentage,
+            ]);
+        }
+
+        if ($productType === 'bundle') {
+            $response['bundle_items'] = $product->bundleItems->map(fn($item) => [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product?->getName($locale),
+                'quantity' => $item->quantity,
+                'unit_price' => $item->product?->base_price,
+                'discount_percentage' => $item->discount_percentage,
+                'discounted_price' => $item->discounted_price,
+                'total_savings' => $item->total_savings,
+            ]);
+        }
+
+        if ($productType === 'configurable') {
+            $response['custom_options'] = $metaData['custom_options'] ?? [];
+        }
+
+        return response()->json($response);
     }
 
     /**
